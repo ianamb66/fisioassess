@@ -23,9 +23,11 @@ import CategoryTabs from '../components/CategoryTabs';
 import PatientEditor from '../features/patients/PatientEditor';
 import PatientsPage from '../features/patients/PatientsPage';
 import ToolEducationPanel from '../components/ToolEducationPanel';
+import TemplatePicker from '../components/TemplatePicker';
 
 import { clinicalTools } from '../data/clinicalTools';
 import { CATEGORIES } from '../data/categories';
+import { assessmentTemplates } from '../data/assessmentTemplates';
 
 import { getReferenceValue } from '../utils/getReferenceValue';
 import { downloadHTML, generatePatientDashboardHTML } from '../utils/exportDashboard';
@@ -43,6 +45,7 @@ export default function Page() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
 
   const [patients, setPatients] = useState<any[]>([]);
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
@@ -108,15 +111,19 @@ export default function Page() {
 
   const filteredTools = useMemo(() => {
     const q = (searchQuery || '').toLowerCase();
+    const template = activeTemplateId ? assessmentTemplates.find((t) => t.id === activeTemplateId) : null;
+
     const base = clinicalTools.filter((tool) => {
       const t = (tool.title || '').toLowerCase();
       const d = (tool.description || '').toLowerCase();
       const matchesSearch = t.includes(q) || d.includes(q);
       const matchesCat = activeCategory === 'all' || tool.category === activeCategory;
-      return matchesSearch && matchesCat;
+      const matchesTemplate = template ? template.toolIds.includes(tool.id) : true;
+      return matchesSearch && matchesCat && matchesTemplate;
     });
+
     return [...base].sort((a, b) => (favorites.includes(b.id) ? 1 : 0) - (favorites.includes(a.id) ? 1 : 0));
-  }, [searchQuery, activeCategory, favorites]);
+  }, [searchQuery, activeCategory, favorites, activeTemplateId]);
 
   const favoriteTools = useMemo(() => clinicalTools.filter((t) => favorites.includes(t.id)), [favorites]);
 
@@ -439,7 +446,7 @@ export default function Page() {
       )}
 
       {view === 'new' && (
-        <main className="max-w-5xl mx-auto px-4 py-6">
+        <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-xl font-extrabold text-gray-900">Nueva valoración</h2>
@@ -452,11 +459,13 @@ export default function Page() {
             )}
           </div>
 
-          <div className="mt-5">
+          <TemplatePicker templates={assessmentTemplates} value={activeTemplateId} onChange={setActiveTemplateId} />
+
+          <div>
             <CategoryTabs categories={CATEGORIES} activeCategory={activeCategory} onChange={setActiveCategory} />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredTools.map((tool) => (
               <ToolCard key={tool.id} tool={tool} isFav={favorites.includes(tool.id)} onOpen={openTool} />
             ))}
