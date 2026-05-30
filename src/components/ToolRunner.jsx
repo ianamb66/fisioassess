@@ -1,11 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Star, StarOff, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import ResultCard from './ResultCard';
 
 import ClinicalTimer from './ClinicalTimer';
 
 export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, patientData, onSaveReport, previousReport }) {
   const [formData, setFormData] = useState({});
+
+  const hasAnyInput = useMemo(() => {
+    return Object.values(formData || {}).some((v) => v !== '' && v !== null && v !== undefined);
+  }, [formData]);
 
   const result = useMemo(() => {
     if (!tool) return null;
@@ -25,13 +29,7 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
           <ArrowLeft size={24} />
         </button>
         <h2 className="font-semibold text-gray-800 text-lg truncate px-4">{tool.title}</h2>
-        <button
-          onClick={() => toggleFavorite(tool.id)}
-          className="p-2 -mr-2 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
-          aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-        >
-          {isFavorite ? <Star size={24} className="text-amber-500 fill-amber-500" /> : <StarOff size={24} />}
-        </button>
+        <div className="w-10" />
       </div>
 
       <div className="p-4 print:p-0">
@@ -160,6 +158,7 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
           onClear={clearForm}
           onSave={() => onSaveReport({ tool, result, formData, previousReport })}
           canSave={canSave}
+          suppressErrorBox={!hasAnyInput}
         />
 
         <div className="mt-12 text-center print:mt-8">

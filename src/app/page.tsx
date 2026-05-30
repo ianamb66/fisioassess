@@ -12,7 +12,6 @@ import {
   Search,
   Star,
   Stethoscope,
-  Users,
 } from 'lucide-react';
 
 import BottomNav from '../components/BottomNav';
@@ -46,7 +45,7 @@ import { remote } from '../api/remote';
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
 
-type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard' | 'table' | 'session';
+type ViewId = 'home' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard' | 'table' | 'session';
 
 export default function Page() {
   const [view, setView] = useState<ViewId>('home');
@@ -351,42 +350,18 @@ export default function Page() {
       </header>
 
       {/* Content */}
-      {view === 'patients' && (
-        <PatientsPage
-          patients={patients}
-          activePatientId={activePatientId}
-          onSelect={(id: string) => {
-            setActivePatientId(id);
-            setView('patient');
-          }}
-          onCreate={() => {
-            createNewPatientDraft();
-          }}
-          onDelete={deletePatient}
-          onEdit={async (id: string) => {
-            const p = patients.find((x) => x.id === id);
-            if (p) setEditingPatient(p);
-          }}
-        />
-      )}
 
       {view === 'home' && (
         <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
           <ClinicalDisclaimer compact />
 
-          {/* 3 primary actions */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* 2 primary actions */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <PrimaryAction
               title="Nueva valoración"
               subtitle="Aplicar una prueba y guardar"
               Icon={Stethoscope}
               onClick={() => setView('new')}
-            />
-            <PrimaryAction
-              title="Buscar paciente"
-              subtitle="Abrir expediente"
-              Icon={Users}
-              onClick={() => setView('patients')}
             />
             <PrimaryAction
               title="Herramienta rápida"
@@ -409,9 +384,6 @@ export default function Page() {
                   {activePatient ? `${activePatient?.age ?? '—'} años${activePatient?.sex ? ` / ${activePatient.sex}` : ''}` : 'Los resultados no se guardan en historial de paciente.'}
                 </div>
               </div>
-              <button onClick={() => setView('patients')} className="text-sm font-semibold text-indigo-700">
-                {activePatient ? 'Cambiar' : 'Seleccionar'}
-              </button>
             </div>
 
             {activePatient && (
@@ -557,7 +529,7 @@ export default function Page() {
           {!activePatientId ? (
             <div className="mt-4 bg-white border border-amber-200 rounded-3xl p-6 text-amber-900">
               <div className="font-semibold">Selecciona un paciente para ver reportes.</div>
-              <button onClick={() => setView('patients')} className="mt-2 text-sm font-semibold text-indigo-700">Ir a pacientes</button>
+              <button onClick={() => setView('home')} className="mt-2 text-sm font-semibold text-indigo-700">Ir a pacientes</button>
             </div>
           ) : patientEvals.length === 0 ? (
             <div className="mt-4 bg-white border border-gray-200 rounded-3xl p-6 text-gray-500">Sin registro.</div>
