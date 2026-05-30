@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Download, FileText, PlusCircle, Pencil, AlertCircle } from 'lucide-react';
 
-export default function PatientProfilePage({ patient, evaluations, onNewEvaluation, onExportHTML, onPrint, onEdit }) {
+export default function PatientProfilePage({ patient, evaluations, onNewEvaluation, onExportHTML, onPrint, onEdit, onViewTable }) {
   const latestByTool = useMemo(() => {
     const map = new Map();
     for (const e of evaluations || []) {
@@ -37,6 +37,9 @@ export default function PatientProfilePage({ patient, evaluations, onNewEvaluati
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={onNewEvaluation} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-600 text-white font-semibold">
             <PlusCircle size={16}/> Nueva valoración
+          </button>
+          <button onClick={onViewTable} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 font-semibold text-gray-700">
+            <FileText size={16}/> Ver tabla
           </button>
           <button onClick={onExportHTML} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 font-semibold text-gray-700">
             <Download size={16}/> Exportar dashboard (HTML)

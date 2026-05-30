@@ -23,6 +23,7 @@ import CategoryTabs from '../components/CategoryTabs';
 import PatientEditor from '../features/patients/PatientEditor';
 import PatientsPage from '../features/patients/PatientsPage';
 import PatientProfilePage from '../features/patients/PatientProfilePage';
+import PatientTablePage from '../features/patients/PatientTablePage';
 import DashboardPrintView from '../components/DashboardPrintView';
 import ToolEducationPanel from '../components/ToolEducationPanel';
 import TemplatePicker from '../components/TemplatePicker';
@@ -39,7 +40,7 @@ import { db } from '../db/api';
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
 
-type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard';
+type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard' | 'table';
 
 export default function Page() {
   const [view, setView] = useState<ViewId>('home');
@@ -529,11 +530,23 @@ export default function Page() {
           onNewEvaluation={() => setView('new')}
           onExportHTML={exportDashboard}
           onPrint={printDashboard}
+          onViewTable={() => setView('table')}
           onEdit={async () => {
             if (!activePatientId) return;
             const p = await db.getPatient(activePatientId);
             if (p) setEditingPatient(p);
           }}
+        />
+      )}
+
+      {view === 'table' && (
+        <PatientTablePage
+          appName={APP_NAME}
+          patient={activePatient}
+          evaluations={patientEvals}
+          onBack={() => setView('patient')}
+          onExportHTML={exportDashboard}
+          onPrint={printDashboard}
         />
       )}
 
