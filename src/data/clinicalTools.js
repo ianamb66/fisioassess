@@ -92,11 +92,13 @@ export const clinicalTools = [
   },
   {
     id: 'sts30',
-    title: 'Potencia muscular STS 30 segundos',
+    title: 'STS 30 segundos (30CST)',
     category: 'funcionales',
     type: 'form',
     icon: Activity,
-    description: 'Estima potencia muscular de miembros inferiores a partir de Sit-to-Stand 30s.',
+    description: 'Prueba funcional Sit-to-Stand en 30 segundos. Incluye contador y cronómetro.',
+    timer: { title: 'Temporizador STS 30s', mode: 'countdown', durationSec: 30 },
+    counter: { title: 'Repeticiones', field: 'repeticiones', hint: 'Usa + / − durante la prueba. Al finalizar, guarda la valoración.' },
     fields: [
       { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1' },
       { id: 'talla', label: 'Estatura (m)', type: 'number', step: '0.01' },
@@ -354,6 +356,46 @@ export const clinicalTools = [
       },
     ],
     calculate: calculateOswestry,
+  },
+  {
+    id: 'sts5',
+    title: '5 Times Sit to Stand (5xSTS)',
+    category: 'funcionales',
+    type: 'form',
+    icon: Activity,
+    description: 'Tiempo para completar 5 bipedestaciones completas sin usar manos.',
+    timer: { title: 'Cronómetro 5xSTS', mode: 'stopwatch', outputField: 'tiempo' },
+    fields: [{ id: 'tiempo', label: 'Tiempo (segundos)', type: 'number', step: '0.1' }],
+    calculate: (v) => {
+      const { calculate5xSTS } = require('../utils/calculations');
+      return calculate5xSTS(v);
+    },
+  },
+  {
+    id: 'eva',
+    title: 'Escala de Dolor (EVA)',
+    category: 'dolor',
+    type: 'form',
+    icon: AlertTriangle,
+    description: 'Escala visual análoga 0–10.',
+    fields: [{ id: 'dolor', label: 'Dolor (0-10)', type: 'number', step: '1' }],
+    calculate: (v) => {
+      const { calculateEVA } = require('../utils/calculations');
+      return calculateEVA(v);
+    },
+  },
+  {
+    id: 'oxford',
+    title: 'Escala Oxford (0–5)',
+    category: 'basicas',
+    type: 'form',
+    icon: Stethoscope,
+    description: 'Fuerza analítica por grupos musculares (0–5).',
+    fields: [{ id: 'grado', label: 'Grado (0-5)', type: 'number', step: '1' }],
+    calculate: (v) => {
+      const { calculateOxford } = require('../utils/calculations');
+      return calculateOxford(v);
+    },
   },
   {
     id: 'desaturacion',

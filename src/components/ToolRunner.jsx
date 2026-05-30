@@ -51,8 +51,39 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
                   // store seconds
                   setFormData((prev) => ({ ...prev, [tool.timer.outputField]: (ms / 1000).toFixed(1) }));
                 }
+                if (tool.timer?.onStopSet) {
+                  // custom hook to populate additional fields
+                  const patch = tool.timer.onStopSet({ ms, prev: formData });
+                  if (patch && typeof patch === 'object') setFormData((p) => ({ ...p, ...patch }));
+                }
               }}
             />
+          )}
+
+          {tool.counter && (
+            <div className="bg-white border border-gray-200 rounded-3xl p-5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">{tool.counter.title || 'Contador'}</div>
+              <div className="mt-2 flex items-center justify-between">
+                <div className="text-5xl font-extrabold tabular-nums text-gray-900">{Number(formData[tool.counter.field] || 0)}</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setFormData((prev) => ({ ...prev, [tool.counter.field]: Math.max(0, Number(prev[tool.counter.field] || 0) - 1) }))}
+                    className="w-14 h-14 rounded-2xl border border-gray-200 bg-white text-gray-700 font-extrabold text-2xl"
+                    aria-label="Restar"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => setFormData((prev) => ({ ...prev, [tool.counter.field]: Number(prev[tool.counter.field] || 0) + 1 }))}
+                    className="w-14 h-14 rounded-2xl border border-indigo-600 bg-indigo-600 text-white font-extrabold text-2xl"
+                    aria-label="Sumar"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              {tool.counter.hint && <div className="mt-2 text-sm text-gray-500">{tool.counter.hint}</div>}
+            </div>
           )}
           {tool.type === 'form' &&
             tool.fields?.map((field) => (
