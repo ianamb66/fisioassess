@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import BottomNav from '../components/BottomNav';
+import ClinicalDisclaimer from '../components/ClinicalDisclaimer';
 import ToolRunner from '../components/ToolRunner';
 import ToolCard from '../components/ToolCard';
 import SearchBar from '../components/SearchBar';
@@ -257,6 +258,9 @@ export default function Page() {
           </div>
         </header>
         <AuthPanel />
+        <div className="max-w-3xl mx-auto px-4">
+          <ClinicalDisclaimer />
+        </div>
       </div>
     );
   }
@@ -365,6 +369,8 @@ export default function Page() {
 
       {view === 'home' && (
         <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+          <ClinicalDisclaimer compact />
+
           {/* 3 primary actions */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <PrimaryAction

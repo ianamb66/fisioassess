@@ -221,6 +221,45 @@ export const calculateOxford = (v) => {
   };
 };
 
+export const calculateMRC = (v) => {
+  const ok = validateFields(v, { grado: { label: 'grado', unit: '/5', min: 0, max: 5, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const g = Number(v.grado);
+  const statusColor = g <= 3 ? 'red' : g === 4 ? 'yellow' : 'green';
+  return {
+    main: { value: g, unit: '/5', label: 'MRC/Daniels', statusColor },
+    interpretation: 'Registro de fuerza muscular (0–5). Interpretación depende del grupo muscular evaluado.',
+    formula: 'Criterios de puntuación: escala 0–5.',
+    inputs: { ...v },
+  };
+};
+
+export const calculateGoniometria = (v) => {
+  const ok = validateFields(v, { grados: { label: 'grados', unit: '°', min: 0, max: 360, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const deg = Number(v.grados);
+  return {
+    main: { value: deg.toFixed(0), unit: '°', label: 'Rango de movimiento', statusColor: 'green' },
+    interpretation: 'Registro de ángulo articular. Valores normales dependen de la articulación y población.',
+    formula: 'Medición con goniómetro (registro en grados).',
+    inputs: { ...v },
+  };
+};
+
+export const calculateAshworth = (v) => {
+  if (v?.grado === undefined || v?.grado === null || v?.grado === '') return makeErrorResult('Completa el grado de Ashworth.');
+  const g = String(v.grado);
+  const allowed = ['0', '1', '1+', '2', '3', '4'];
+  if (!allowed.includes(g)) return makeErrorResult('Grado inválido. Usa: 0, 1, 1+, 2, 3, 4.');
+  const statusColor = (g === '3' || g === '4') ? 'red' : (g === '2' ? 'yellow' : 'green');
+  return {
+    main: { value: g, unit: '', label: 'Ashworth Modificada', statusColor },
+    interpretation: 'Registro de espasticidad. Interpretación depende del contexto neurológico.',
+    formula: 'Criterios de puntuación: escala MAS (0–4, incluyendo 1+).',
+    inputs: { ...v },
+  };
+};
+
 export const calculateDesaturacion = (v) => {
   const rules = {
     i: { label: 'SpO2 inicial', unit: '%', min: 50, max: 100, nonNegative: true },

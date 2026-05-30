@@ -398,6 +398,67 @@ export const clinicalTools = [
     },
   },
   {
+    id: 'mrc',
+    title: 'Fuerza Muscular (Daniels/MRC)',
+    category: 'basicas',
+    type: 'form',
+    icon: Stethoscope,
+    description: 'Registro rápido de fuerza muscular 0–5.',
+    fields: [
+      { id: 'musculo', label: 'Grupo muscular (opcional)', type: 'text', placeholder: 'Ej. Dorsiflexores, Cuádriceps' },
+      { id: 'grado', label: 'Grado (0-5)', type: 'number', step: '1' },
+    ],
+    calculate: (v) => {
+      const { calculateMRC } = require('../utils/calculations');
+      return calculateMRC(v);
+    },
+  },
+  {
+    id: 'goniom',
+    title: 'Rango de Movimiento (Goniometría)',
+    category: 'basicas',
+    type: 'form',
+    icon: Activity,
+    description: 'Registro de ángulos articulares en grados.',
+    fields: [
+      { id: 'articulacion', label: 'Articulación (opcional)', type: 'text', placeholder: 'Ej. Hombro, Rodilla' },
+      { id: 'movimiento', label: 'Movimiento (opcional)', type: 'text', placeholder: 'Ej. Flexión, Extensión' },
+      { id: 'grados', label: 'Grados (°)', type: 'number', step: '1' },
+    ],
+    calculate: (v) => {
+      const { calculateGoniometria } = require('../utils/calculations');
+      return calculateGoniometria(v);
+    },
+  },
+  {
+    id: 'ashworth',
+    title: 'Espasticidad (Ashworth Modificada)',
+    category: 'basicas',
+    type: 'form',
+    icon: AlertTriangle,
+    description: 'Registro de tono muscular/espasticidad (0, 1, 1+, 2, 3, 4).',
+    fields: [
+      {
+        id: 'grado',
+        label: 'Grado',
+        type: 'select',
+        options: [
+          { v: '0', l: '0' },
+          { v: '1', l: '1' },
+          { v: '1+', l: '1+' },
+          { v: '2', l: '2' },
+          { v: '3', l: '3' },
+          { v: '4', l: '4' },
+        ],
+      },
+      { id: 'musculo', label: 'Músculo/grupo (opcional)', type: 'text', placeholder: 'Ej. Flexores de codo' },
+    ],
+    calculate: (v) => {
+      const { calculateAshworth } = require('../utils/calculations');
+      return calculateAshworth(v);
+    },
+  },
+  {
     id: 'desaturacion',
     title: 'Calculadora de Desaturación',
     category: 'respiratorio',
