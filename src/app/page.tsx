@@ -22,6 +22,8 @@ import SearchBar from '../components/SearchBar';
 import CategoryTabs from '../components/CategoryTabs';
 import PatientEditor from '../features/patients/PatientEditor';
 import PatientsPage from '../features/patients/PatientsPage';
+import PatientProfilePage from '../features/patients/PatientProfilePage';
+import DashboardPrintView from '../components/DashboardPrintView';
 import ToolEducationPanel from '../components/ToolEducationPanel';
 import TemplatePicker from '../components/TemplatePicker';
 
@@ -37,7 +39,7 @@ import { db } from '../db/api';
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
 
-type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool';
+type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard';
 
 export default function Page() {
   const [view, setView] = useState<ViewId>('home');
@@ -208,6 +210,10 @@ export default function Page() {
 
     const evs = await db.listEvaluationsByPatient(activePatientId);
     setPatientEvals(evs);
+
+    // After saving, go to expediente (patient profile)
+    setActiveToolId(null);
+    setView('patient');
   };
 
   const exportDashboard = async () => {
@@ -217,6 +223,13 @@ export default function Page() {
     const evaluations = await db.listEvaluationsByPatient(activePatientId);
     const out = generatePatientDashboardHTML({ appName: APP_NAME, patient, evaluations });
     downloadHTML(out);
+  };
+
+  const openDashboard = () => setView('dashboard');
+  const printDashboard = () => {
+    // user can "Save as PDF" in print dialog
+    setView('dashboard');
+    setTimeout(() => window.print(), 50);
   };
 
   // TOOL VIEW
@@ -308,7 +321,7 @@ export default function Page() {
           activePatientId={activePatientId}
           onSelect={(id: string) => {
             setActivePatientId(id);
-            setView('home');
+            setView('patient');
           }}
           onCreate={() => {
             createNewPatientDraft();
@@ -507,6 +520,34 @@ export default function Page() {
             </div>
           )}
         </main>
+      )}
+
+      {view === 'patient' && (
+        <PatientProfilePage
+          patient={activePatient}
+          evaluations={patientEvals}
+          onNewEvaluation={() => setView('new')}
+          onExportHTML={exportDashboard}
+          onPrint={printDashboard}
+          onEdit={async () => {
+            if (!activePatientId) return;
+            const p = await db.getPatient(activePatientId);
+            if (p) setEditingPatient(p);
+          }}
+        />
+      )}
+
+      {view === 'dashboard' && (
+        <div className="pb-24">
+          <div className="max-w-4xl mx-auto px-4 py-4 print:hidden flex items-center justify-between">
+            <div className="font-extrabold text-gray-900">Dashboard PDF</div>
+            <div className="flex gap-2">
+              <button onClick={() => window.print()} className="px-4 py-2 rounded-2xl bg-indigo-600 text-white font-semibold">Imprimir / Guardar PDF</button>
+              <button onClick={() => setView('patient')} className="px-4 py-2 rounded-2xl border border-gray-200 font-semibold text-gray-700">Volver</button>
+            </div>
+          </div>
+          <DashboardPrintView appName={APP_NAME} patient={activePatient} evaluations={patientEvals} />
+        </div>
       )}
 
       {view === 'more' && (
