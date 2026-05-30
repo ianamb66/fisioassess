@@ -65,6 +65,7 @@ export const clinicalTools = [
     type: 'form',
     icon: ClipboardList,
     description: 'Evalúa movilidad, equilibrio y riesgo de caídas.',
+    timer: { title: 'Cronómetro TUG', mode: 'stopwatch', outputField: 'tiempo' },
     fields: [{ id: 'tiempo', label: 'Tiempo (segundos)', type: 'number', step: '0.1' }],
     calculate: (v) => {
       const { calculateTUG } = require('../utils/calculations');

@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { ArrowLeft, Star, StarOff, AlertCircle } from 'lucide-react';
 import ResultCard from './ResultCard';
 
+import ClinicalTimer from './ClinicalTimer';
+
 export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, patientData, onSaveReport, previousReport }) {
   const [formData, setFormData] = useState({});
 
@@ -39,6 +41,19 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
         </div>
 
         <div className="space-y-4 print:hidden">
+          {tool.timer && (
+            <ClinicalTimer
+              title={tool.timer.title || 'Cronómetro'}
+              mode={tool.timer.mode || 'stopwatch'}
+              durationSec={tool.timer.durationSec || 0}
+              onStop={(ms) => {
+                if (tool.timer?.outputField) {
+                  // store seconds
+                  setFormData((prev) => ({ ...prev, [tool.timer.outputField]: (ms / 1000).toFixed(1) }));
+                }
+              }}
+            />
+          )}
           {tool.type === 'form' &&
             tool.fields?.map((field) => (
               <div key={field.id} className="bg-white p-1 rounded-2xl border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all">
