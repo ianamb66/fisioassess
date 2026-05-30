@@ -28,6 +28,8 @@ import PatientTablePage from '../features/patients/PatientTablePage';
 import DashboardPrintView from '../components/DashboardPrintView';
 import ToolEducationPanel from '../components/ToolEducationPanel';
 import TemplatePicker from '../components/TemplatePicker';
+import SessionWizard from '../features/session/SessionWizard';
+import { useCurrentSession } from '../state/currentSession';
 
 import { clinicalTools } from '../data/clinicalTools';
 import { CATEGORIES } from '../data/categories';
@@ -44,7 +46,7 @@ import { remote } from '../api/remote';
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
 
-type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard' | 'table';
+type ViewId = 'home' | 'patients' | 'new' | 'reports' | 'more' | 'tool' | 'patient' | 'dashboard' | 'table' | 'session';
 
 export default function Page() {
   const [view, setView] = useState<ViewId>('home');
@@ -64,6 +66,7 @@ export default function Page() {
   const [patientEvals, setPatientEvals] = useState<any[]>([]);
 
   const { session, loading: authLoading, error: authError } = useSession();
+  const startWizardSession = useCurrentSession((s: any) => s.startSession);
 
   // Load remote state (Supabase)
   useEffect(() => {
@@ -493,6 +496,13 @@ export default function Page() {
         </main>
       )}
 
+      {view === 'session' && (
+        <SessionWizard
+          onExit={() => setView('patient')}
+          onFinish={() => setView('patient')}
+        />
+      )}
+
       {view === 'new' && (
         <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           <div className="flex items-start justify-between">
@@ -508,6 +518,24 @@ export default function Page() {
           </div>
 
           <TemplatePicker templates={assessmentTemplates} value={activeTemplateId} onChange={setActiveTemplateId} />
+
+          {activePatientId && (
+            <div className="bg-white border border-gray-200 rounded-3xl p-5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">Sesión</div>
+              <div className="text-sm text-gray-500 mt-1">Inicia un flujo guiado (wizard) usando la plantilla seleccionada.</div>
+              <button
+                onClick={() => {
+                  const t = activeTemplateId ? assessmentTemplates.find((x) => x.id === activeTemplateId) : assessmentTemplates.find((x) => x.id === 'quick');
+                  const toolIds = (t?.toolIds || []).filter((id) => clinicalTools.some((ct) => ct.id === id));
+                  startWizardSession({ patientId: activePatientId, templateId: t?.id || null, toolIds });
+                  setView('session');
+                }}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-600 text-white font-semibold"
+              >
+                Iniciar sesión guiada
+              </button>
+            </div>
+          )}
 
           <div>
             <CategoryTabs categories={CATEGORIES} activeCategory={activeCategory} onChange={setActiveCategory} />
