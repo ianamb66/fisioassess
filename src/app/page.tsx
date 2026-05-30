@@ -35,7 +35,10 @@ import { assessmentTemplates } from '../data/assessmentTemplates';
 import { getReferenceValue } from '../utils/getReferenceValue';
 import { downloadHTML, generatePatientDashboardHTML } from '../utils/exportDashboard';
 
-import { db } from '../db/api';
+import AuthPanel from '../components/AuthPanel';
+import { useSession } from '../supabase/useSession';
+import { supabase } from '../supabase/client';
+import { remote } from '../api/remote';
 
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
@@ -59,46 +62,36 @@ export default function Page() {
 
   const [patientEvals, setPatientEvals] = useState<any[]>([]);
 
-  // Load DB state
+  const { session, loading: authLoading, error: authError } = useSession();
+
+  // Load remote state (Supabase)
   useEffect(() => {
     (async () => {
-      const [pats, fav, rec] = await Promise.all([db.listPatients(), db.getFavorites(), db.getRecents()]);
+      if (!session) return;
+      const pats = await remote.listPatients();
       setPatients(pats);
-      setFavorites(fav);
-      setRecents(rec);
 
       // active patient from localStorage (preference only)
       try {
         const raw = window.localStorage.getItem('fisioassess_active_patient_pref_v1');
         if (raw) setActivePatientId(JSON.parse(raw));
-      } catch {
-        // ignore
-      }
+      } catch {}
     })();
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     (async () => {
+      if (!session) return;
       if (!activePatientId) {
         setPatientEvals([]);
         return;
       }
-      const evs = await db.listEvaluationsByPatient(activePatientId);
+      const evs = await remote.listEvaluationsByPatient(activePatientId);
       setPatientEvals(evs);
     })();
-  }, [activePatientId]);
+  }, [activePatientId, session]);
 
-  useEffect(() => {
-    (async () => {
-      await db.setFavorites(favorites);
-    })();
-  }, [favorites]);
-
-  useEffect(() => {
-    (async () => {
-      await db.setRecents(recents);
-    })();
-  }, [recents]);
+  // favorites/recents: keep local for now
 
   useEffect(() => {
     try {
@@ -171,8 +164,8 @@ export default function Page() {
   };
 
   const savePatient = async (patient: any) => {
-    const saved = await db.upsertPatient(patient);
-    const pats = await db.listPatients();
+    const saved = await remote.upsertPatient(patient);
+    const pats = await remote.listPatients();
     setPatients(pats);
     setActivePatientId(saved.id);
     setEditingPatient(null);
@@ -180,8 +173,8 @@ export default function Page() {
   };
 
   const deletePatient = async (id: string) => {
-    await db.deletePatient(id);
-    const pats = await db.listPatients();
+    await remote.deletePatient(id);
+    const pats = await remote.listPatients();
     setPatients(pats);
     if (activePatientId === id) setActivePatientId(null);
   };
@@ -193,7 +186,7 @@ export default function Page() {
 
     const ref = getReferenceValue(tool.id, activePatient, result);
 
-    await db.addEvaluation({
+    await remote.addEvaluation({
       patientId: activePatientId,
       toolId: tool.id,
       toolTitle: tool.title,
@@ -209,19 +202,18 @@ export default function Page() {
       therapistNotes: '',
     });
 
-    const evs = await db.listEvaluationsByPatient(activePatientId);
+    const evs = await remote.listEvaluationsByPatient(activePatientId);
     setPatientEvals(evs);
 
-    // After saving, go to expediente (patient profile)
     setActiveToolId(null);
     setView('patient');
   };
 
   const exportDashboard = async () => {
     if (!activePatientId) return;
-    const patient = await db.getPatient(activePatientId);
+    const patient = patients.find((p) => p.id === activePatientId);
     if (!patient) return;
-    const evaluations = await db.listEvaluationsByPatient(activePatientId);
+    const evaluations = await remote.listEvaluationsByPatient(activePatientId);
     const out = generatePatientDashboardHTML({ appName: APP_NAME, patient, evaluations });
     downloadHTML(out);
   };
@@ -232,6 +224,42 @@ export default function Page() {
     setView('dashboard');
     setTimeout(() => window.print(), 50);
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-gray-500">Cargando…</div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-lg bg-white border border-rose-200 rounded-3xl p-6 text-rose-900">
+          <div className="font-extrabold">Error de autenticación</div>
+          <div className="text-sm mt-2">{authError}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <header className="bg-indigo-600 text-white rounded-b-[2.5rem] p-6 shadow-lg shadow-indigo-600/20">
+          <div className="flex items-center gap-3 mb-2 mt-2">
+            <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-sm">
+              <Activity size={28} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{APP_NAME}</h1>
+              <p className="text-indigo-200 text-sm font-medium">Acceso profesional</p>
+            </div>
+          </div>
+        </header>
+        <AuthPanel />
+      </div>
+    );
+  }
 
   // TOOL VIEW
   if (view === 'tool' && activeTool) {
@@ -329,7 +357,7 @@ export default function Page() {
           }}
           onDelete={deletePatient}
           onEdit={async (id: string) => {
-            const p = await db.getPatient(id);
+            const p = patients.find((x) => x.id === id);
             if (p) setEditingPatient(p);
           }}
         />
@@ -533,7 +561,7 @@ export default function Page() {
           onViewTable={() => setView('table')}
           onEdit={async () => {
             if (!activePatientId) return;
-            const p = await db.getPatient(activePatientId);
+            const p = patients.find((x) => x.id === activePatientId);
             if (p) setEditingPatient(p);
           }}
         />
