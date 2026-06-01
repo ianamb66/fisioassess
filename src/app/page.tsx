@@ -36,11 +36,8 @@ import { assessmentTemplates } from '../data/assessmentTemplates';
 
 import { getReferenceValue } from '../utils/getReferenceValue';
 import { downloadHTML, generatePatientDashboardHTML } from '../utils/exportDashboard';
+import { db } from '../db/api';
 
-import AuthPanel from '../components/AuthPanel';
-import { useSession } from '../supabase/useSession';
-import { supabase } from '../supabase/client';
-import { remote } from '../api/remote';
 
 const APP_NAME = 'FisioAssess';
 const APP_SUBTITLE = 'Valoración fisioterapéutica centrada en paciente';
@@ -63,15 +60,12 @@ export default function Page() {
   const [recents, setRecents] = useState<any[]>([]);
 
   const [patientEvals, setPatientEvals] = useState<any[]>([]);
-
-  const { session, loading: authLoading, error: authError } = useSession();
   const startWizardSession = useCurrentSession((s: any) => s.startSession);
 
   // Load remote state (Supabase)
   useEffect(() => {
     (async () => {
-      if (!session) return;
-      const pats = await remote.listPatients();
+      const pats = await db.listPatients();
       setPatients(pats);
 
       // active patient from localStorage (preference only)
@@ -80,19 +74,18 @@ export default function Page() {
         if (raw) setActivePatientId(JSON.parse(raw));
       } catch {}
     })();
-  }, [session]);
+  }, []);
 
   useEffect(() => {
     (async () => {
-      if (!session) return;
       if (!activePatientId) {
         setPatientEvals([]);
         return;
       }
-      const evs = await remote.listEvaluationsByPatient(activePatientId);
+      const evs = await db.listEvaluationsByPatient(activePatientId);
       setPatientEvals(evs);
     })();
-  }, [activePatientId, session]);
+  }, [activePatientId]);
 
   // favorites/recents: keep local for now
 
@@ -167,8 +160,8 @@ export default function Page() {
   };
 
   const savePatient = async (patient: any) => {
-    const saved = await remote.upsertPatient(patient);
-    const pats = await remote.listPatients();
+    const saved = await db.upsertPatient(patient);
+    const pats = await db.listPatients();
     setPatients(pats);
     setActivePatientId(saved.id);
     setEditingPatient(null);
@@ -176,8 +169,8 @@ export default function Page() {
   };
 
   const deletePatient = async (id: string) => {
-    await remote.deletePatient(id);
-    const pats = await remote.listPatients();
+    await db.deletePatient(id);
+    const pats = await db.listPatients();
     setPatients(pats);
     if (activePatientId === id) setActivePatientId(null);
   };
@@ -189,7 +182,7 @@ export default function Page() {
 
     const ref = getReferenceValue(tool.id, activePatient, result);
 
-    await remote.addEvaluation({
+    await db.addEvaluation({
       patientId: activePatientId,
       toolId: tool.id,
       toolTitle: tool.title,
@@ -205,7 +198,7 @@ export default function Page() {
       therapistNotes: '',
     });
 
-    const evs = await remote.listEvaluationsByPatient(activePatientId);
+    const evs = await db.listEvaluationsByPatient(activePatientId);
     setPatientEvals(evs);
 
     setActiveToolId(null);
@@ -216,7 +209,7 @@ export default function Page() {
     if (!activePatientId) return;
     const patient = patients.find((p) => p.id === activePatientId);
     if (!patient) return;
-    const evaluations = await remote.listEvaluationsByPatient(activePatientId);
+    const evaluations = await db.listEvaluationsByPatient(activePatientId);
     const out = generatePatientDashboardHTML({ appName: APP_NAME, patient, evaluations });
     downloadHTML(out);
   };
@@ -227,46 +220,6 @@ export default function Page() {
     setView('dashboard');
     setTimeout(() => window.print(), 50);
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-gray-500">Cargando…</div>
-    );
-  }
-
-  if (authError) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="max-w-lg bg-white border border-rose-200 rounded-3xl p-6 text-rose-900">
-          <div className="font-extrabold">Error de autenticación</div>
-          <div className="text-sm mt-2">{authError}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-indigo-600 text-white rounded-b-[2.5rem] p-6 shadow-lg shadow-indigo-600/20">
-          <div className="flex items-center gap-3 mb-2 mt-2">
-            <div className="bg-white/20 p-2 rounded-2xl backdrop-blur-sm">
-              <Activity size={28} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{APP_NAME}</h1>
-              <p className="text-indigo-200 text-sm font-medium">Acceso profesional</p>
-            </div>
-          </div>
-        </header>
-        <AuthPanel />
-        <div className="max-w-3xl mx-auto px-4">
-          <ClinicalDisclaimer />
-        </div>
-      </div>
-    );
-  }
-
   // TOOL VIEW
   if (view === 'tool' && activeTool) {
     return (
