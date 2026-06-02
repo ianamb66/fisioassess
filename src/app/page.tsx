@@ -80,6 +80,8 @@ export default function Page() {
           isFavorite={false}
           toggleFavorite={() => {}}
           patientData={{}}
+          initialFormData={{}}
+          onFormDataChange={() => {}}
           onSaveReport={() => {
             // In modo aislado, el guardado real ocurre en la sesión guiada.
           }}

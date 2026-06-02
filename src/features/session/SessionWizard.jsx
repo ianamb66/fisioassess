@@ -17,6 +17,17 @@ export default function SessionWizard({ onExit, onFinish }) {
   const activeStep = steps.find((s) => s.toolId === activeToolId) || steps[0];
   const activeTool = clinicalTools.find((t) => t.id === activeStep?.toolId);
 
+  const initialFormData = useMemo(() => {
+    if (!activeStep) return {};
+    const base = { ...(activeStep.inputsDraft || {}) };
+    // prefill commonly used fields from meta/shared
+    if (meta?.age != null && base.edad === undefined) base.edad = meta.age;
+    if (meta?.sex && base.sexo === undefined) base.sexo = meta.sex;
+    if (session?.shared?.peso && base.peso === undefined) base.peso = session.shared.peso;
+    if (session?.shared?.talla && base.talla === undefined) base.talla = session.shared.talla;
+    return base;
+  }, [activeStep?.toolId, activeStep?.inputsDraft, meta?.age, meta?.sex, session?.shared]);
+
   const completedCount = steps.filter((s) => s.status === 'done').length;
 
   const mergedPatientData = {};
@@ -153,6 +164,10 @@ export default function SessionWizard({ onExit, onFinish }) {
               isFavorite={false}
               toggleFavorite={() => {}}
               patientData={mergedPatientData}
+              initialFormData={initialFormData}
+              onFormDataChange={(next) => {
+                setStepDraft(activeTool.id, next);
+              }}
               onSaveReport={({ tool, result, formData }) => onSave({ tool, result, formData })}
               previousReport={null}
             />
