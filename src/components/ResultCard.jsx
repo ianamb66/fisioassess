@@ -2,21 +2,15 @@ import React from 'react';
 import { Info, Printer, RefreshCcw, AlertTriangle } from 'lucide-react';
 import StatusIcon from './StatusIcon';
 
-export default function ResultCard({ result, onClear, onSave, canSave }) {
+export default function ResultCard({ result, onClear, onSave, canSave, suppressErrorBox }) {
   if (!result) return null;
 
   // Error state
   if (result?.error) {
+    if (suppressErrorBox) return null;
     return (
       <div className="mt-6 rounded-3xl border p-6 shadow-sm bg-amber-50 border-amber-200 print:border-gray-300">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="text-amber-600 mt-1" />
-          <div>
-            <p className="font-semibold text-amber-900">Revisa los datos</p>
-            <p className="text-amber-800 text-sm mt-1">{result.error}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex gap-3 print:hidden">
+        <div className="mt-1 flex gap-3 print:hidden">
           <button
             onClick={onClear}
             className="flex items-center justify-center gap-2 bg-white text-gray-700 font-medium py-3 px-4 rounded-2xl shadow-sm border border-gray-200 hover:bg-gray-50 active:scale-95 transition-all"

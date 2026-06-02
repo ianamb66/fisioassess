@@ -174,6 +174,92 @@ export const calculateOswestry = (answers) => {
   };
 };
 
+export const calculate5xSTS = (v) => {
+  const ok = validateFields(v, { tiempo: { label: 'tiempo', unit: 'seg', min: 1, max: 120, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const t = Number(v.tiempo);
+
+  // From provided spec: >15s indicates recurrent falls risk; MCID 2.3s
+  const statusColor = t > 15 ? 'red' : t > 12 ? 'yellow' : 'green';
+  const interpretation = t > 15
+    ? 'Tiempo > 15 s: sugiere mayor riesgo de caídas recurrentes.'
+    : 'Tiempo dentro de rango funcional. Interpretación final depende del contexto clínico.';
+
+  return {
+    main: { value: t.toFixed(1), unit: 's', label: 'Tiempo 5xSTS', statusColor },
+    interpretation,
+    formula: 'Procedimiento: 5 bipedestaciones completas lo más rápido posible sin usar manos.',
+    inputs: { ...v },
+  };
+};
+
+export const calculateEVA = (v) => {
+  const ok = validateFields(v, { dolor: { label: 'dolor', unit: '/10', min: 0, max: 10, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const d = Number(v.dolor);
+  const statusColor = d >= 7 ? 'red' : d >= 4 ? 'yellow' : 'green';
+  const interpretation = d >= 7 ? 'Dolor alto (≥7/10). Considerar dolor agudo y ajustar intervención.' : 'Registrar dolor y monitorizar cambios.';
+  return {
+    main: { value: d, unit: '/10', label: 'Dolor (EVA)', statusColor },
+    interpretation,
+    formula: 'Escala subjetiva 0 (sin dolor) a 10 (máximo dolor).',
+    inputs: { ...v },
+  };
+};
+
+export const calculateOxford = (v) => {
+  const ok = validateFields(v, { grado: { label: 'grado', unit: '/5', min: 0, max: 5, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const g = Number(v.grado);
+  const statusColor = g <= 3 ? 'red' : g === 4 ? 'yellow' : 'green';
+  const interpretation = g <= 3 ? 'Grado ≤3: debilidad en antigravitatorios (según criterio clínico).' : 'Registrar y monitorizar cambios por sesión.';
+  return {
+    main: { value: g, unit: '/5', label: 'Oxford', statusColor },
+    interpretation,
+    formula: 'Escala Oxford 0–5 (fuerza analítica).',
+    inputs: { ...v },
+  };
+};
+
+export const calculateMRC = (v) => {
+  const ok = validateFields(v, { grado: { label: 'grado', unit: '/5', min: 0, max: 5, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const g = Number(v.grado);
+  const statusColor = g <= 3 ? 'red' : g === 4 ? 'yellow' : 'green';
+  return {
+    main: { value: g, unit: '/5', label: 'MRC/Daniels', statusColor },
+    interpretation: 'Registro de fuerza muscular (0–5). Interpretación depende del grupo muscular evaluado.',
+    formula: 'Criterios de puntuación: escala 0–5.',
+    inputs: { ...v },
+  };
+};
+
+export const calculateGoniometria = (v) => {
+  const ok = validateFields(v, { grados: { label: 'grados', unit: '°', min: 0, max: 360, nonNegative: true } });
+  if (!ok.ok) return makeErrorResult(ok.message);
+  const deg = Number(v.grados);
+  return {
+    main: { value: deg.toFixed(0), unit: '°', label: 'Rango de movimiento', statusColor: 'green' },
+    interpretation: 'Registro de ángulo articular. Valores normales dependen de la articulación y población.',
+    formula: 'Medición con goniómetro (registro en grados).',
+    inputs: { ...v },
+  };
+};
+
+export const calculateAshworth = (v) => {
+  if (v?.grado === undefined || v?.grado === null || v?.grado === '') return makeErrorResult('Completa el grado de Ashworth.');
+  const g = String(v.grado);
+  const allowed = ['0', '1', '1+', '2', '3', '4'];
+  if (!allowed.includes(g)) return makeErrorResult('Grado inválido. Usa: 0, 1, 1+, 2, 3, 4.');
+  const statusColor = (g === '3' || g === '4') ? 'red' : (g === '2' ? 'yellow' : 'green');
+  return {
+    main: { value: g, unit: '', label: 'Ashworth Modificada', statusColor },
+    interpretation: 'Registro de espasticidad. Interpretación depende del contexto neurológico.',
+    formula: 'Criterios de puntuación: escala MAS (0–4, incluyendo 1+).',
+    inputs: { ...v },
+  };
+};
+
 export const calculateDesaturacion = (v) => {
   const rules = {
     i: { label: 'SpO2 inicial', unit: '%', min: 50, max: 100, nonNegative: true },

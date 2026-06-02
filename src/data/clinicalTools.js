@@ -65,6 +65,7 @@ export const clinicalTools = [
     type: 'form',
     icon: ClipboardList,
     description: 'Evalúa movilidad, equilibrio y riesgo de caídas.',
+    timer: { title: 'Cronómetro TUG', mode: 'stopwatch', outputField: 'tiempo' },
     fields: [{ id: 'tiempo', label: 'Tiempo (segundos)', type: 'number', step: '0.1' }],
     calculate: (v) => {
       const { calculateTUG } = require('../utils/calculations');
@@ -91,11 +92,13 @@ export const clinicalTools = [
   },
   {
     id: 'sts30',
-    title: 'Potencia muscular STS 30 segundos',
+    title: 'STS 30 segundos (30CST)',
     category: 'funcionales',
     type: 'form',
     icon: Activity,
-    description: 'Estima potencia muscular de miembros inferiores a partir de Sit-to-Stand 30s.',
+    description: 'Prueba funcional Sit-to-Stand en 30 segundos. Incluye contador y cronómetro.',
+    timer: { title: 'Temporizador STS 30s', mode: 'countdown', durationSec: 30 },
+    counter: { title: 'Repeticiones', field: 'repeticiones', hint: 'Usa + / − durante la prueba. Al finalizar, guarda la valoración.' },
     fields: [
       { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1' },
       { id: 'talla', label: 'Estatura (m)', type: 'number', step: '0.01' },
@@ -353,6 +356,107 @@ export const clinicalTools = [
       },
     ],
     calculate: calculateOswestry,
+  },
+  {
+    id: 'sts5',
+    title: '5 Times Sit to Stand (5xSTS)',
+    category: 'funcionales',
+    type: 'form',
+    icon: Activity,
+    description: 'Tiempo para completar 5 bipedestaciones completas sin usar manos.',
+    timer: { title: 'Cronómetro 5xSTS', mode: 'stopwatch', outputField: 'tiempo' },
+    fields: [{ id: 'tiempo', label: 'Tiempo (segundos)', type: 'number', step: '0.1' }],
+    calculate: (v) => {
+      const { calculate5xSTS } = require('../utils/calculations');
+      return calculate5xSTS(v);
+    },
+  },
+  {
+    id: 'eva',
+    title: 'Escala de Dolor (EVA)',
+    category: 'dolor',
+    type: 'form',
+    icon: AlertTriangle,
+    description: 'Escala visual análoga 0–10.',
+    fields: [{ id: 'dolor', label: 'Dolor (0-10)', type: 'number', step: '1' }],
+    calculate: (v) => {
+      const { calculateEVA } = require('../utils/calculations');
+      return calculateEVA(v);
+    },
+  },
+  {
+    id: 'oxford',
+    title: 'Escala Oxford (0–5)',
+    category: 'basicas',
+    type: 'form',
+    icon: Stethoscope,
+    description: 'Fuerza analítica por grupos musculares (0–5).',
+    fields: [{ id: 'grado', label: 'Grado (0-5)', type: 'number', step: '1' }],
+    calculate: (v) => {
+      const { calculateOxford } = require('../utils/calculations');
+      return calculateOxford(v);
+    },
+  },
+  {
+    id: 'mrc',
+    title: 'Fuerza Muscular (Daniels/MRC)',
+    category: 'basicas',
+    type: 'form',
+    icon: Stethoscope,
+    description: 'Registro rápido de fuerza muscular 0–5.',
+    fields: [
+      { id: 'musculo', label: 'Grupo muscular (opcional)', type: 'text', placeholder: 'Ej. Dorsiflexores, Cuádriceps' },
+      { id: 'grado', label: 'Grado (0-5)', type: 'number', step: '1' },
+    ],
+    calculate: (v) => {
+      const { calculateMRC } = require('../utils/calculations');
+      return calculateMRC(v);
+    },
+  },
+  {
+    id: 'goniom',
+    title: 'Rango de Movimiento (Goniometría)',
+    category: 'basicas',
+    type: 'form',
+    icon: Activity,
+    description: 'Registro de ángulos articulares en grados.',
+    fields: [
+      { id: 'articulacion', label: 'Articulación (opcional)', type: 'text', placeholder: 'Ej. Hombro, Rodilla' },
+      { id: 'movimiento', label: 'Movimiento (opcional)', type: 'text', placeholder: 'Ej. Flexión, Extensión' },
+      { id: 'grados', label: 'Grados (°)', type: 'number', step: '1' },
+    ],
+    calculate: (v) => {
+      const { calculateGoniometria } = require('../utils/calculations');
+      return calculateGoniometria(v);
+    },
+  },
+  {
+    id: 'ashworth',
+    title: 'Espasticidad (Ashworth Modificada)',
+    category: 'basicas',
+    type: 'form',
+    icon: AlertTriangle,
+    description: 'Registro de tono muscular/espasticidad (0, 1, 1+, 2, 3, 4).',
+    fields: [
+      {
+        id: 'grado',
+        label: 'Grado',
+        type: 'select',
+        options: [
+          { v: '0', l: '0' },
+          { v: '1', l: '1' },
+          { v: '1+', l: '1+' },
+          { v: '2', l: '2' },
+          { v: '3', l: '3' },
+          { v: '4', l: '4' },
+        ],
+      },
+      { id: 'musculo', label: 'Músculo/grupo (opcional)', type: 'text', placeholder: 'Ej. Flexores de codo' },
+    ],
+    calculate: (v) => {
+      const { calculateAshworth } = require('../utils/calculations');
+      return calculateAshworth(v);
+    },
   },
   {
     id: 'desaturacion',

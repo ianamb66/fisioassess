@@ -1,18 +1,38 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Star, StarOff, AlertCircle } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import ResultCard from './ResultCard';
 
-export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, patientData, onSaveReport, previousReport }) {
-  const [formData, setFormData] = useState({});
+import ClinicalTimer from './ClinicalTimer';
+
+export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, patientData, onSaveReport, previousReport, initialFormData, onFormDataChange }) {
+  const [formData, setFormData] = useState(initialFormData || {});
+
+  // If the parent changes initialFormData (switching tools/steps), sync it.
+  React.useEffect(() => {
+    if (initialFormData) setFormData(initialFormData);
+  }, [initialFormData]);
+
+  const hasAnyInput = useMemo(() => {
+    return Object.values(formData || {}).some((v) => v !== '' && v !== null && v !== undefined);
+  }, [formData]);
 
   const result = useMemo(() => {
     if (!tool) return null;
     return tool.calculate(formData);
   }, [formData, tool]);
 
-  const handleInputChange = (id, val) => setFormData((prev) => ({ ...prev, [id]: val }));
+  const handleInputChange = (id, val) => {
+    setFormData((prev) => {
+      const next = { ...prev, [id]: val };
+      onFormDataChange?.(next);
+      return next;
+    });
+  };
 
-  const clearForm = () => setFormData({});
+  const clearForm = () => {
+    setFormData({});
+    onFormDataChange?.({});
+  };
 
   const canSave = Boolean(patientData?.patientName) && Boolean(result) && !result?.error;
 
@@ -23,13 +43,7 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
           <ArrowLeft size={24} />
         </button>
         <h2 className="font-semibold text-gray-800 text-lg truncate px-4">{tool.title}</h2>
-        <button
-          onClick={() => toggleFavorite(tool.id)}
-          className="p-2 -mr-2 rounded-full hover:bg-gray-200 text-gray-600 transition-colors"
-          aria-label={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-        >
-          {isFavorite ? <Star size={24} className="text-amber-500 fill-amber-500" /> : <StarOff size={24} />}
-        </button>
+        <div className="w-10" />
       </div>
 
       <div className="p-4 print:p-0">
@@ -39,6 +53,72 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
         </div>
 
         <div className="space-y-4 print:hidden">
+          {tool.timer && (
+            <ClinicalTimer
+              title={tool.timer.title || 'Cronómetro'}
+              mode={tool.timer.mode || 'stopwatch'}
+              durationSec={tool.timer.durationSec || 0}
+              onStop={(ms) => {
+                if (tool.timer?.outputField) {
+                  // store seconds
+                  setFormData((prev) => {
+                    const next = { ...prev, [tool.timer.outputField]: (ms / 1000).toFixed(1) };
+                    onFormDataChange?.(next);
+                    return next;
+                  });
+                }
+                if (tool.timer?.onStopSet) {
+                  // custom hook to populate additional fields
+                  const patch = tool.timer.onStopSet({ ms, prev: formData });
+                  if (patch && typeof patch === 'object') {
+                    setFormData((p) => {
+                      const next = { ...p, ...patch };
+                      onFormDataChange?.(next);
+                      return next;
+                    });
+                  }
+                }
+              }}
+            />
+          )}
+
+          {tool.counter && (
+            <div className="bg-white border border-gray-200 rounded-3xl p-5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">{tool.counter.title || 'Contador'}</div>
+              <div className="mt-2 flex items-center justify-between">
+                <div className="text-5xl font-extrabold tabular-nums text-gray-900">{Number(formData[tool.counter.field] || 0)}</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      setFormData((prev) => {
+                        const next = { ...prev, [tool.counter.field]: Math.max(0, Number(prev[tool.counter.field] || 0) - 1) };
+                        onFormDataChange?.(next);
+                        return next;
+                      })
+                    }
+                    className="w-14 h-14 rounded-2xl border border-gray-200 bg-white text-gray-700 font-extrabold text-2xl"
+                    aria-label="Restar"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() =>
+                      setFormData((prev) => {
+                        const next = { ...prev, [tool.counter.field]: Number(prev[tool.counter.field] || 0) + 1 };
+                        onFormDataChange?.(next);
+                        return next;
+                      })
+                    }
+                    className="w-14 h-14 rounded-2xl border border-indigo-600 bg-indigo-600 text-white font-extrabold text-2xl"
+                    aria-label="Sumar"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              {tool.counter.hint && <div className="mt-2 text-sm text-gray-500">{tool.counter.hint}</div>}
+            </div>
+          )}
           {tool.type === 'form' &&
             tool.fields?.map((field) => (
               <div key={field.id} className="bg-white p-1 rounded-2xl border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all">
@@ -114,6 +194,7 @@ export default function ToolRunner({ tool, onBack, isFavorite, toggleFavorite, p
           onClear={clearForm}
           onSave={() => onSaveReport({ tool, result, formData, previousReport })}
           canSave={canSave}
+          suppressErrorBox={!hasAnyInput}
         />
 
         <div className="mt-12 text-center print:mt-8">

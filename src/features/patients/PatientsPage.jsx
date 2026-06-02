@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, Search, Trash2, Edit3, User } from 'lucide-react';
-import { createPatient } from './patientStore';
 
 export default function PatientsPage({ patients, activePatientId, onSelect, onCreate, onDelete, onEdit }) {
   const [q, setQ] = useState('');
@@ -8,7 +7,7 @@ export default function PatientsPage({ patients, activePatientId, onSelect, onCr
   const filtered = useMemo(() => {
     const s = (q || '').trim().toLowerCase();
     if (!s) return patients;
-    return patients.filter((p) => (p.name || '').toLowerCase().includes(s) || (p.diagnosis || '').toLowerCase().includes(s));
+    return patients.filter((p) => (p.fullName || '').toLowerCase().includes(s) || (p.diagnosis || '').toLowerCase().includes(s));
   }, [patients, q]);
 
   return (
@@ -16,10 +15,10 @@ export default function PatientsPage({ patients, activePatientId, onSelect, onCr
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900">Pacientes</h2>
-          <p className="text-sm text-gray-500 mt-1">Crea, busca y abre perfiles. Todo se guarda localmente.</p>
+          <p className="text-sm text-gray-500 mt-1">Crea, busca y abre perfiles. Todo se guarda en este dispositivo.</p>
         </div>
         <button
-          onClick={() => onCreate(createPatient())}
+          onClick={() => onCreate()}
           className="inline-flex items-center gap-2 bg-indigo-600 text-white font-semibold px-4 py-2 rounded-2xl"
         >
           <Plus size={18} /> Nuevo
@@ -50,14 +49,13 @@ export default function PatientsPage({ patients, activePatientId, onSelect, onCr
                   <div>
                     <div className="flex items-center gap-2">
                       <User size={18} className="text-gray-400" />
-                      <div className="text-lg font-bold text-gray-900">{p.name || 'Sin nombre'}</div>
+                      <div className="text-lg font-bold text-gray-900">{p.fullName || 'Sin nombre'}</div>
                     </div>
                     <div className="text-sm text-gray-500 mt-1">
                       {p.age ? `${p.age} años` : 'Edad —'} {p.sex ? ` / ${p.sex}` : ''}
                     </div>
                     {p.diagnosis && <div className="text-sm text-gray-600 mt-2">Dx: {p.diagnosis}</div>}
                   </div>
-                  <div className="text-xs text-gray-400">{(p.evaluations || []).length} eval.</div>
                 </div>
               </button>
 
